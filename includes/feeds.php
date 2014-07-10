@@ -99,10 +99,8 @@ class PF_Feeds_Schema {
 		register_taxonomy( $this->tag_taxonomy, $this->post_type, apply_filters( 'pf_register_feed_tag_taxonomy_args', array(
 			'labels' => $labels,
 			'public' => true,
-			'show_admin_columns' => TRUE,
-			'show_in_nav_menus' => TRUE,
-			'show_ui'           => TRUE,			
-			#'show_in_menu' => PF_MENU_SLUG,
+			'show_admin_columns' => true,
+			'show_in_menu' => PF_MENU_SLUG,
 			'rewrite' => false
 		) ) );
 	}
@@ -254,7 +252,7 @@ class PF_Feeds_Schema {
 				$r['description'] = $theFeed->get_description();
 			}
 			if (!$r['feed_icon']){
-				#$r['feed_icon'] = $theFeed->get_favicon();
+				$r['feed_icon'] = $theFeed->get_favicon();
 			}	
 			if (!$r['feed_author']){
 				$r['feed_author'] = $theFeed->get_author();
@@ -443,8 +441,7 @@ class PF_Feeds_Schema {
 	# When walking through the feedlist, if it is an old entry,
 	# call this function to renew the feed post with better data.
 	public function update_url($url){
-		global $post;
-        pf_log('Invoked: PF_Feeds_Schema::update_url');
+		pf_log('Invoked: PF_Feeds_Schema::update_url');
 		$posts = self::has_feed($url);
 		if (!$posts){
 			$check = self::create($url);
@@ -452,8 +449,8 @@ class PF_Feeds_Schema {
 		}
 		$c = 0;
 		foreach ($posts as $post){
-            setup_postdata($post);
-			$post_id = $post->ID;
+			setup_postdata($post);
+			$post_id = get_the_ID();
 			if (is_numeric($post_id)){
 				if (($c == 0)){
 					self::update($post_id, array('url' => $url));

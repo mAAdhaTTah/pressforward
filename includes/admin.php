@@ -104,8 +104,7 @@ class PF_Admin {
 			__('Feed Tags', 'pf'),
 			__('Feed Tags', 'pf'), 
 			get_option('pf_menu_feeder_access', pf_get_defining_capability_by_role('editor')), 
-			'edit-tags.php?taxonomy=' . pressforward()->pf_feeds->tag_taxonomy . '&post_type='.pressforward()->pf_feeds->post_type . '&top_menu=' . PF_MENU_SLUG,
-			''
+			'edit-tags.php?taxonomy=' . pressforward()->pf_feeds->tag_taxonomy
 		);			
 /**
 		add_submenu_page(
@@ -585,15 +584,12 @@ class PF_Admin {
 										' . __('Times repeated in source', 'pf') . ': <span class="feed_repeat sortable_sources_repeat">' . $item['source_repeat'] . '</span><br />
 										';
 										if ($format === 'nomination'){
-
 											$ibox .= __('Number of nominations received', 'pf')
 											. ': <span class="sortable_nom_count">' . $metadata['nom_count'] . '</span><br />'
 											. __('First submitted by', 'pf')
 											. ': <span class="first_submitter">' . $metadata['submitters'] . '</span><br />'
 											. __('Nominated on', 'pf')
-											. ': <span class="nominated_on">' . date( 'M j, Y; g:ia' , strtotime($metadata['date_nominated'])) . '</span><br />'
-											. __('Nominated by', 'pf')
-											. ': <span class="nominated_by">' . get_the_nominating_users() . '</span><br />';	
+											. ': <span class="nominated_on">' . date( 'M j, Y; g:ia' , strtotime($metadata['date_nominated'])) . '</span><br />';		
 										}
 									$ibox .= '</div>';
 									echo $ibox;
@@ -1072,7 +1068,7 @@ class PF_Admin {
             </div>
 			<?php
 			endif;
-			?><form method="post" action="options.php" enctype="multipart/form-data"><?php
+			?><form method="post" action="options.php"><?php
             //settings_fields(PF_SLUG . '_feeder_options');
             //$options = get_option(PF_SLUG . '_plugin_feeder_options');
 

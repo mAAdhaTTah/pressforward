@@ -260,10 +260,7 @@ class PF_RSS_Import extends PF_Module {
                         <div><?php _e('Add OPML File', 'pf'); ?></div>
                             <div class="pf_feeder_input_box">
                                 <input id="<?php echo PF_SLUG . '_feedlist[opml]'; ?>" class="regular-text" type="text" name="<?php echo PF_SLUG . '_feedlist[opml]'; ?>" value="" />
-                                <label class="description" for="<?php echo PF_SLUG . '_feedlist[opml]'; ?>"><?php _e('*Drop link to OPML here. No HTTPS allowed.', 'pf'); ?></label><br />
-							</div>
-							<div class="pf_feeder_input_box">
-								<input type="file" id="<?php echo PF_SLUG . '_feedlist[opml_uploader]'; ?>" name="<?php echo PF_SLUG . '_feedlist[opml_uploader]'; ?>" /><label class="description" for="<?php echo PF_SLUG . '_feedlist[opml_uploader]'; ?>"><?php _e('*Upload OPML here. No HTTPS allowed.', 'pf'); ?></label>
+                                <label class="description" for="<?php echo PF_SLUG . '_feedlist[opml]'; ?>"><?php _e('*Drop link to OPML here. No HTTPS allowed.', 'pf'); ?></label>
 								<p>&nbsp;Adding large OPML files may take some time.</p>
                                 <a href="http://en.wikipedia.org/wiki/Opml">What is an OPML file?</a>
 
@@ -302,7 +299,7 @@ class PF_RSS_Import extends PF_Module {
 		set_time_limit(0);
 		pf_log('Add Feed Process Invoked: PF_RSS_IMPORT::pf_feedlist_validate');
 		pf_log($input);
-		if ( current_user_can('edit_posts') ) {
+		if ( current_user_can('edit_post') ) {
  			pf_log('Yes, the current user can edit posts.');
 		} else {
 			pf_log('No, the current user can not edit posts.');
@@ -338,50 +335,24 @@ class PF_RSS_Import extends PF_Module {
 				wp_die('Bad feed input. Why are you trying to place an array?');
 			}
 		}
-#		var_dump($_POST);
-#		die();
+		#var_dump($input);
+		#die();
 		//print_r($inputSingle);
 
 		if (!empty($input['opml'])){
-			self::process_opml($input['opml']);
+			$OPML_reader = new OPML_reader;
+			$opml_array = $OPML_reader->get_OPML_data($input['opml']);
+			#print_r($opml_array); die();
+			foreach($opml_array as $key=>$feedXml){
+				# Adding this as a 'quick' type so that we can process the list quickly.
+				pf_log('Adding this as a quick type so that we can process the list quickly');
+				$opml_array = $feed_obj->progressive_feedlist_transformer($opml_array, $feedXml, $key);
+				# @todo Tag based on folder structure
+			}
+			#$check_up = update_option( PF_SLUG . '_feedlist', $opml_array );
 			$subed = 'an OPML file ';
 		}
-		
-		if (!empty($input['opml_uploader'])){
-			#var_dump($input); die();
-			pf_log('Attempting to upload on OPML file.');
-			$keys = array_keys($_FILES); $i = 0; foreach ( $_FILES as $ofile ) {   
-				// if a files was upload   
-				if ($ofile['size']) {     
-					// if it is an OPML
-					// Pattern from http://www.sitepoint.com/wordpress-options-panel/ and http://codex.wordpress.org/Function_Reference/wp_handle_upload
-					if ( preg_match('/(opml|xml)$/', $ofile['type']) ) {       
-						$override = array('test_form' => false);       
-						// save the file, and store an array, containing its location in $file       
-						$file = wp_handle_upload( $ofile, $override );  
-						pf_log('File upload resulted in:');
-						pf_log($file);
-						self::process_opml($file['url']);
-					} else {       
-						// Not an image.        
-						#$options = get_option('plugin_options');       
-						#$plugin_options[$keys[$i]] = $options[$logo];       
-						// Die and let the user know that they made a mistake.       
-						wp_die('No OPML file was uploaded.');     
-					}   
-				}   
-				// Else, the user didn't upload a file.   
-				// Retain the image that's already on file.   
-				else {     
-					#$options = get_option('plugin_options');     
-					#$plugin_options[$keys[$i]] = $options[$keys[$i]];   
-				}   
-				$i++; 
-			} 
-			
-			$subed = 'an OPML uploaded file ';
-		}		
-#var_dump($_FILES); die();
+
 		if (!empty($_POST['o_feed_url'])){
 				$offender = array_search($_POST['o_feed_url'], $feedlist);
 				if ($offender !== false){
@@ -396,19 +367,6 @@ class PF_RSS_Import extends PF_Module {
 		}
 		return $input;
 		
-	}
-	
-	public function process_opml($opml){
-		$OPML_reader = new OPML_reader;
-		$opml_array = $OPML_reader->get_OPML_data($opml);
-		#print_r($opml_array); die();
-		foreach($opml_array as $key=>$feedXml){
-			# Adding this as a 'quick' type so that we can process the list quickly.
-			pf_log('Adding this as a quick type so that we can process the list quickly');
-			$opml_array = $feed_obj->progressive_feedlist_transformer($opml_array, $feedXml, $key);
-			# @todo Tag based on folder structure
-		}
-		#$check_up = update_option( PF_SLUG . '_feedlist', $opml_array );
 	}
 
 	public function remove_a_feed() {

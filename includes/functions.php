@@ -870,20 +870,6 @@ function pf_retrieve_meta($id, $field, $obj = false, $single = true){
     
 }
 
-function pf_update_meta($id, $field, $value = '', $prev_value = NULL){
-    $field = pf_pass_meta($field);
-    $check = update_post_meta($id, $field, $value, $prev_value);
-    return $check;
-    
-}
-
-function pf_add_meta($id, $field, $value = '', $unique = false){
-    $field = pf_pass_meta($field);
-    $check = add_post_meta($id, $field, $value, $unique);
-    return $check;
-    
-}
-
 function filter_for_pf_archives_only($sql){
 	global $wpdb;
 #	if (isset($_GET['pf-see']) && ('archive-only' == $_GET['pf-see'])){
