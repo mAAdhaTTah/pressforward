@@ -59,5 +59,6 @@ class PF_Tests extends PF_UnitTestCase {
 
 		$this->assertSame( false, $value );
 	}
+
 }
 
