@@ -5,7 +5,7 @@
  */
 
 class PF_Readability {
-	
+
 	/**
 	 * Abstract function to make everything readable.
 	 *
@@ -21,10 +21,10 @@ class PF_Readability {
 			#ob_start();
 			extract( $args, EXTR_SKIP );
 			set_time_limit(0);
-			$url = pf_de_https($url);
 			$readability_stat = $url;
+			$url = pressforward()->pf_feed_items->resolve_full_url($url);
 			$descrip = rawurldecode($descrip);
-			if (get_magic_quotes_gpc())  
+			if (get_magic_quotes_gpc())
 				$descrip = stripslashes($descrip);
 
 			if ($authorship == 'aggregation') {
@@ -68,7 +68,7 @@ class PF_Readability {
 							$readability_stat .= ' Retrieved text is less than original text.';
 							$read_status = 'already_readable';
 						}
-						
+
 					} else {
 						$read_status = 'made_readable';
 					}
@@ -80,13 +80,13 @@ class PF_Readability {
 				$read_status = 'already_readable';
 				$itemReadReady = $descrip;
 			}
-			
-			$return_args = array( 'status' => $read_status, 'readable' => $itemReadReady);
+
+			$return_args = array( 'status' => $read_status, 'readable' => $itemReadReady, 'url' => $url);
 			#ob_end_flush();
 			return $return_args;
-			
+
 	}
-	
+
 	/**
 	 * Handles a readability request via POST
 	 */
@@ -101,6 +101,7 @@ class PF_Readability {
 		$item_id = $_POST['read_item_id'];
 		$post_id = $_POST['post_id'];
 		$force = $_POST['force'];
+		$url = $_POST['url'];
 		//error_reporting(0);
 		if ( (false === ( $itemReadReady = get_transient( 'item_readable_content_' . $item_id ) )) || $force == 'force' ) {
 
@@ -111,21 +112,22 @@ class PF_Readability {
 				'authorship'	=> $_POST['authorship'],
 				'post_id'		=> $_POST['post_id']
 			);
-			
+
 			$readable_ready = self::get_readable_text($args);
 
 			$read_status = $readable_ready['status'];
 			$itemReadReady = $readable_ready['readable'];
+			$url = $readable_ready['url'];
 
 			set_transient( 'item_readable_content_' . $item_id, $itemReadReady, 60*60*24 );
 		}
-		
+
 		$contentObj = new pf_htmlchecker($itemReadReady);
-		$itemReadReady = $contentObj->closetags($itemReadReady);		
-		
-		# BIG FREAKING WARNING: This WILL NOT WORK if you have WP_DEBUG and WP_DEBUG_DISPLAY true and either your theme or plugins have bad functions on the save_post hook. 
+		$itemReadReady = $contentObj->closetags($itemReadReady);
+
+		# BIG FREAKING WARNING: This WILL NOT WORK if you have WP_DEBUG and WP_DEBUG_DISPLAY true and either your theme or plugins have bad functions on the save_post hook.
 		if ($post_id != 0){
-		
+
 			$content = html_entity_decode($itemReadReady);
 			$update_ready = array(
 				'ID' => $post_id,
@@ -150,7 +152,7 @@ class PF_Readability {
 		foreach ($dderrors as $dderror){
 			$domDocErrors .= ' Error: '.$dderror->code.' Line:'.$dderror->line.' '. $dderror->message;
 		}
-		
+
 			$response = array(
 				'what' => 'full_item_content',
 				'action' => 'make_readable',
@@ -181,19 +183,18 @@ class PF_Readability {
 	public static function readability_object($url) {
 
 		set_time_limit(0);
-
-		$url = pf_de_https($url);
-		$url = str_replace('&amp;','&', $url);
+		$url =  pressforward()->pf_feed_items->resolve_full_url($url);
+		$request = pf_de_https($url, 'wp_remote_get', array('timeout' => '30'));
 		//print_r($url); print_r(' - Readability<br />');
 		// change from Boone - use wp_remote_get() instead of file_get_contents()
-		$request = wp_remote_get( $url, array('timeout' => '30') );
+		//$request = wp_remote_get( $url, array('timeout' => '30') );
 		if (is_wp_error($request)) {
 			$content = 'error-secured';
 			//print_r($request); die();
 			return $content;
 		}
 		if ( ! empty( $request['body'] ) ){
-			$html = $request['body'];	
+			$html = $request['body'];
 		} else {
 			$content = false;
 			return $content;
@@ -201,7 +202,7 @@ class PF_Readability {
 
 		//check if tidy exists to clean up the input.
 		if (function_exists('tidy_parse_string')) {
-			$tidy = tidy_parse_string($html, array(), 'UTF8');
+			$tidy = tidy_parse_string($html, array('wrap' => 0, ), 'UTF8');
 			$tidy->cleanRepair();
 			$html = $tidy->value;
 		}
@@ -226,7 +227,7 @@ class PF_Readability {
 				//if we've got tidy, let's use it.
 				if (function_exists('tidy_parse_string')) {
 					$tidy = tidy_parse_string($content,
-						array('indent'=>true, 'show-body-only'=>true),
+						array('indent'=>true, 'show-body-only'=>true, 'wrap' => 0),
 						'UTF8');
 					$tidy->cleanRepair();
 					$content = $tidy->value;
@@ -237,8 +238,8 @@ class PF_Readability {
 			$content = convert_chars($content);
 			$domRotated = 0;
 			$dom = new domDocument('1.0', 'utf-8');
-			
-			
+
+
 			$dom->preserveWhiteSpace = true;
 			$dom->substituteEntities = true;
 			$dom->resolveExternals = true;
@@ -273,7 +274,7 @@ class PF_Readability {
 				$content=preg_replace("/".$rel."/is", ' ', $content);
 			}
 			if ( 120 > strlen($content)){$content = false;}
-			#			$content = stripslashes($content); 
+			#			$content = stripslashes($content);
 			# print_r($content);
 #				var_dump($content); die();
 // this will also output doctype and comments at top level
@@ -281,7 +282,7 @@ class PF_Readability {
 #			foreach($dom->childNodes as $node){
 #				$content .= $dom->saveXML($node)."\n";
 #			}
-			
+
 		} else {
 			# If Readability can't get the content, send back a FALSE to loop with.
 			$content = false;
